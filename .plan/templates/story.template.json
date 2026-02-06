@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "1",
+  "id": "US-XXX",
+  "title": "",
+  "area": "",
+  "priority": 1,
+  "stage": "build",
+  "riskTier": "low",
+  "sizing": "small",
+  "autonomy": "gated_deploy",
+  "description": "",
+  "requirements": [],
+  "acceptanceCriteria": [],
+  "dependencies": [],
+  "deploySafety": {
+    "strategy": "",
+    "healthChecks": [],
+    "rollbackTrigger": "",
+    "rollbackCommand": "",
+    "verification": []
+  },
+  "context": {
+    "workBreakdown": ".plan/work-breakdown.md",
+    "traceability": ".plan/traceability.md",
+    "runbook": ".plan/runbook.md",
+    "areaDoc": ".plan/areas/<area>.md",
+    "files": []
+  },
+  "status": {
+    "planning": { "passes": true, "notes": "" },
+    "build": { "passes": false, "branch": "", "commit": "", "notes": "" },
+    "review": { "passes": false, "branch": "", "commit": "", "notes": "" },
+    "test": { "passes": false, "command": "", "result": "", "notes": "" },
+    "validation": {
+      "requirementsImplemented": [],
+      "requirementsVerified": [],
+      "notes": ""
+    },
+    "deploy": { "passes": false, "attempts": 0, "target": "", "result": "", "rollback": "", "notes": "" }
+  }
+}

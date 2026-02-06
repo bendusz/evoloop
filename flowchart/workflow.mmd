@@ -1,0 +1,13 @@
+flowchart TD
+    INIT[".init input"] --> PLAN["plan start"]
+    PLAN --> AREA["plan area (per area)"]
+    AREA --> REVIEW["plan review"]
+    REVIEW --> REDTEAM["plan redteam"]
+    REDTEAM --> PM["plan pm"]
+    PM --> BUILD["run: build"]
+    BUILD --> REVIEWTEST["run: review/test"]
+    REVIEWTEST --> DEPLOY["run: deploy"]
+    DEPLOY --> DONE["complete"]
+    DEPLOY -->|"failure + rollback (< 3 attempts)"| BUILD
+    DEPLOY -->|"3 failures"| BLOCKED["blocked"]
+    REVIEWTEST -->|"review/test failure"| BUILD

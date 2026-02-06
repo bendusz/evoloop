@@ -1,0 +1,26 @@
+{
+  "_comment": "Multi-provider example config. Model names like gpt-5.2 and gemini-2.0-flash are aspirational examples. Replace with real model names available in your environment.",
+  "default": {
+    "cmd": ["claude", "--model", "opus", "--dangerously-skip-permissions", "--print"]
+  },
+  "builder": {
+    "cmd": [
+      "codex",
+      "exec",
+      "--full-auto",
+      "--model",
+      "gpt-5.2",
+      "-c",
+      "model_reasoning_effort=\"xhigh\""
+    ]
+  },
+  "red-team": {
+    "cmd": ["claude", "--model", "opus", "--dangerously-skip-permissions", "--print"]
+  },
+  "reviewer-test": {
+    "cmd": ["claude", "--model", "opus", "--dangerously-skip-permissions", "--print"]
+  },
+  "deploy": {
+    "cmd": ["gemini", "-p", "{{PROMPT}}", "--model", "gemini-2.0-flash"]
+  }
+}

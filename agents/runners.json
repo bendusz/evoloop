@@ -1,0 +1,29 @@
+{
+  "default": {
+    "cmd": ["claude", "--model", "opus", "--dangerously-skip-permissions", "--print"]
+  },
+  "planner": {
+    "cmd": ["claude", "--model", "opus", "--dangerously-skip-permissions", "--print"]
+  },
+  "area-agent": {
+    "cmd": ["claude", "--model", "opus", "--dangerously-skip-permissions", "--print"]
+  },
+  "reviewer": {
+    "cmd": ["claude", "--model", "opus", "--dangerously-skip-permissions", "--print"]
+  },
+  "red-team": {
+    "cmd": ["claude", "--model", "opus", "--dangerously-skip-permissions", "--print"]
+  },
+  "pm": {
+    "cmd": ["claude", "--model", "opus", "--dangerously-skip-permissions", "--print"]
+  },
+  "builder": {
+    "cmd": ["claude", "--model", "opus", "--dangerously-skip-permissions", "--print"]
+  },
+  "reviewer-test": {
+    "cmd": ["claude", "--model", "opus", "--dangerously-skip-permissions", "--print"]
+  },
+  "deploy": {
+    "cmd": ["claude", "--model", "opus", "--dangerously-skip-permissions", "--print"]
+  }
+}
