@@ -16,17 +16,17 @@ The workflow has two phases:
 - Deploy safety and rollback paths are mandatory.
 
 ## Repository Structure
-- `/Users/ben/code/ralphio/orchestrator.sh`: thin CLI dispatcher (`plan` or `run`).
-- `/Users/ben/code/ralphio/scripts/plan.sh`: planning phase runner.
-- `/Users/ben/code/ralphio/scripts/implement.sh`: implementation phase runner.
-- `/Users/ben/code/ralphio/scripts/lib/common.sh`: shared orchestration logic and gates.
-- `/Users/ben/code/ralphio/scripts/doctor.sh`: preflight validator.
-- `/Users/ben/code/ralphio/agents/`: role prompts (planner, area, reviewer, red-team, PM, builder, reviewer-test, deploy).
-- `/Users/ben/code/ralphio/.plan/`: planning artifacts and templates.
-- `/Users/ben/code/ralphio/prd/`: story specs (`US-XXX.json`) and trackers (`US-XXX.md`).
-- `/Users/ben/code/ralphio/.log/`: run logs and context packs.
-- `/Users/ben/code/ralphio/.state/`: pipeline state.
-- `/Users/ben/code/ralphio/flowchart/`: workflow diagrams.
+- `/orchestrator.sh`: thin CLI dispatcher (`plan` or `run`).
+- `/scripts/plan.sh`: planning phase runner.
+- `/scripts/implement.sh`: implementation phase runner.
+- `/scripts/lib/common.sh`: shared orchestration logic and gates.
+- `/scripts/doctor.sh`: preflight validator.
+- `/agents/`: role prompts (planner, area, reviewer, red-team, PM, builder, reviewer-test, deploy).
+- `/.plan/`: planning artifacts and templates.
+- `/prd/`: story specs (`US-XXX.json`) and trackers (`US-XXX.md`).
+- `/.log/`: run logs and context packs.
+- `/.state/`: pipeline state.
+- `/flowchart/`: workflow diagrams.
 
 ## Required Planning Artifacts
 Before PM story generation and implementation, these must exist:
@@ -94,7 +94,7 @@ Implementation stage transitions are enforced:
 
 ## Maintenance Rules
 - When workflow logic changes, update:
-  - `/Users/ben/code/ralphio/README.md`
-  - `/Users/ben/code/ralphio/AGENTS.md`
-  - relevant files under `/Users/ben/code/ralphio/agents/` and `/Users/ben/code/ralphio/scripts/`
+  - `/README.md`
+  - `/AGENTS.md`
+  - relevant files under `/agents/` and `/scripts/`
 - Run `./scripts/doctor.sh` after major workflow changes.

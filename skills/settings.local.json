@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bash -n:*)",
+      "Bash(echo:*)",
+      "Bash(for f in planner.md area-agent.md reviewer.md red-team.md pm.md builder.md reviewer-test.md deploy.md)",
+      "Bash(do if [ -f \"/Users/ben/code/ralphio/agents/$f\" ])",
+      "Bash(then echo \"OK: agents/$f\")",
+      "Bash(else echo \"MISSING: agents/$f\")",
+      "Bash(fi)",
+      "Bash(done)",
+      "Bash(if [ -f \"/Users/ben/code/ralphio/context-pack.md\" ])",
+      "Bash(then echo \"FAIL: context-pack.md still exists\")",
+      "Bash(else echo \"OK: context-pack.md is deleted\")"
+    ]
+  }
+}

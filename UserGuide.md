@@ -1,6 +1,6 @@
-# Ralphio User Guide
+# Evoloop User Guide
 
-This guide walks you through setting up and running Ralphio end-to-end: from dropping source material into `.init/` through planning, implementation, and deployment.
+This guide walks you through setting up and running Evoloop end-to-end: from dropping source material into `.init/` through planning, implementation, and deployment.
 
 ---
 
@@ -15,7 +15,7 @@ This guide walks you through setting up and running Ralphio end-to-end: from dro
 7. [Resuming and Resetting](#7-resuming-and-resetting)
 8. [Monitoring and Logs](#8-monitoring-and-logs)
 9. [Troubleshooting](#9-troubleshooting)
-10. [Extending Ralphio](#10-extending-ralphio)
+10. [Extending Evoloop](#10-extending-evoloop)
 
 ---
 
@@ -38,7 +38,7 @@ sudo pacman -S jq ripgrep
 
 ### AI CLI Tools
 
-Install at least one. Ralphio supports mixing providers per agent.
+Install at least one. Evoloop supports mixing providers per agent.
 
 **Claude Code** (recommended):
 ```bash
@@ -52,7 +52,7 @@ npm install -g @openai/codex
 
 **Gemini CLI**:
 ```bash
-npm install -g @anthropic-ai/gemini-cli
+npm install -g @google/gemini-cli
 ```
 
 ### Verify Setup
@@ -447,7 +447,7 @@ Override model names without editing runners.json (only applies in `--tool` fall
 
 ```bash
 CLAUDE_MODEL=sonnet ./orchestrator.sh run --tool claude
-CODEX_MODEL=gpt-4.1 ./orchestrator.sh run --tool codex
+CODEX_MODEL=gpt-5.2 ./orchestrator.sh run --tool codex
 GEMINI_MODEL=gemini-2.5-pro ./orchestrator.sh run --tool gemini
 ```
 
@@ -581,7 +581,7 @@ Gemini CLI may fail with `ARG_MAX` for prompts over ~200KB (since the prompt is 
 
 ---
 
-## 10. Extending Ralphio
+## 10. Extending Evoloop
 
 ### Adding a New Agent
 

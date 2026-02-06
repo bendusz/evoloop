@@ -606,7 +606,13 @@ all_complete() {
   local nullglob_was_set=false
   shopt -q nullglob && nullglob_was_set=true
   shopt -s nullglob
-  for f in "$PRD_DIR"/*.json; do
+  local -a stories=("$PRD_DIR"/*.json)
+  if [[ "${#stories[@]}" -eq 0 ]]; then
+    "$nullglob_was_set" || shopt -u nullglob
+    echo "false"
+    return
+  fi
+  for f in "${stories[@]}"; do
     local stage
     if ! jq empty "$f" 2>/dev/null; then
       echo "Warning: skipping corrupt JSON file: $f" >&2

@@ -198,29 +198,86 @@ check_deploy_contract_for_deploy_stage() {
   done
 }
 
-check_no_dependency_cycles() {
-    require_jq
-    shopt -s nullglob
-    local -a stories=("$SCRIPT_DIR"/prd/*.json)
-    if [[ "${#stories[@]}" -eq 0 ]]; then
-        return 0
+array_contains() {
+  local needle="$1"
+  shift || true
+  local candidate
+  for candidate in "$@"; do
+    if [[ "$candidate" == "$needle" ]]; then
+      return 0
     fi
-    local story story_id dep dep_file
-    for story in "${stories[@]}"; do
-        story_id=$(jq -r '.id' "$story")
-        while IFS= read -r dep; do
-            [[ -z "$dep" ]] && continue
-            dep_file="$SCRIPT_DIR/prd/$dep.json"
-            if [[ ! -f "$dep_file" ]]; then
-                printf "Broken dependency: %s depends on %s (file not found)\n" "$story_id" "$dep"
-                return 1
-            fi
-            if jq -e --arg id "$story_id" 'any(.dependencies[]?; . == $id)' "$dep_file" >/dev/null 2>&1; then
-                printf "Circular dependency: %s <-> %s\n" "$story_id" "$dep"
-                return 1
-            fi
-        done < <(jq -r '.dependencies[]? // empty' "$story")
-    done
+  done
+  return 1
+}
+
+_dep_cycle_dfs() {
+  local story_id="$1"
+  local dep
+
+  if array_contains "$story_id" "${_dep_cycle_stack[@]-}"; then
+    _dep_cycle_path=("${_dep_cycle_stack[@]-}" "$story_id")
+    return 1
+  fi
+
+  if array_contains "$story_id" "${_dep_cycle_visited[@]-}"; then
+    return 0
+  fi
+
+  _dep_cycle_stack+=("$story_id")
+
+  while IFS= read -r dep; do
+    [[ -z "$dep" ]] && continue
+
+    if [[ ! -f "$SCRIPT_DIR/prd/$dep.json" ]]; then
+      _dep_cycle_error="Broken dependency: $story_id depends on $dep (file not found)"
+      return 1
+    fi
+
+    if ! _dep_cycle_dfs "$dep"; then
+      return 1
+    fi
+  done < <(jq -r '.dependencies[]? // empty' "$SCRIPT_DIR/prd/$story_id.json")
+
+  _dep_cycle_stack=("${_dep_cycle_stack[@]:0:${#_dep_cycle_stack[@]}-1}")
+  _dep_cycle_visited+=("$story_id")
+  return 0
+}
+
+check_no_dependency_cycles() {
+  require_jq
+  shopt -s nullglob
+  local -a stories=("$SCRIPT_DIR"/prd/*.json)
+  if [[ "${#stories[@]}" -eq 0 ]]; then
+    return 0
+  fi
+
+  local story story_id cycle_path=""
+  for story in "${stories[@]}"; do
+    story_id=$(jq -r '.id' "$story")
+    if [[ -z "$story_id" || "$story_id" == "null" ]]; then
+      printf "Invalid story ID in %s\n" "$story"
+      return 1
+    fi
+  done
+
+  _dep_cycle_stack=()
+  _dep_cycle_visited=()
+  _dep_cycle_path=()
+  _dep_cycle_error=""
+
+  for story in "${stories[@]}"; do
+    story_id=$(jq -r '.id' "$story")
+    if ! _dep_cycle_dfs "$story_id"; then
+      if [[ -n "$_dep_cycle_error" ]]; then
+        printf "%s\n" "$_dep_cycle_error"
+      else
+        cycle_path=$(printf '%s -> ' "${_dep_cycle_path[@]-}")
+        cycle_path="${cycle_path% -> }"
+        printf "Circular dependency detected: %s\n" "$cycle_path"
+      fi
+      return 1
+    fi
+  done
 }
 
 check_planning_gate() {

@@ -1,1 +1,8 @@
 .log/
+.state/*
+!.state/.gitkeep
+.temp/*
+!.temp/.gitkeep
+.claude/settings.local.json
+.DS_Store
+.agents.md

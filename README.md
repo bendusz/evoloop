@@ -1,10 +1,10 @@
-# Ralphio
+# Evoloop
 
 A self-contained multi-agent workflow for planning, building, reviewing, testing, and deploying software with strict quality gates and minimal context windows.
 
 ## Overview
 
-Ralphio orchestrates AI agents (Claude, Codex, Gemini) through a two-phase software delivery pipeline:
+Evoloop orchestrates AI agents (Claude, Codex, Gemini) through a two-phase software delivery pipeline:
 
 1. **Planning** - Exhaustive, area-based planning with quality gates, requirement traceability, and red-team review.
 2. **Implementation** - Story-by-story execution loop: build, review/test, deploy, with automatic rollback and retry.
