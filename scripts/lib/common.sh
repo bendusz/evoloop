@@ -24,7 +24,8 @@ RISK_REGISTER_REL=".plan/risk-register.md"
 RUNBOOK="$SCRIPT_DIR/$RUNBOOK_REL"
 
 init_common_defaults() {
-  TOOL="${TOOL:-claude}"
+  TOOL="${TOOL:-codex}"
+  TOOL_EXPLICIT="${TOOL_EXPLICIT:-false}"
   MAX_ITERATIONS="${MAX_ITERATIONS:-0}"
   AREA="${AREA:-}"
   STORY_ID="${STORY_ID:-}"
@@ -38,12 +39,13 @@ parse_shared_args() {
   init_common_defaults
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --tool)
-        if [[ -z "${2:-}" || "${2:-}" == --* ]]; then
-          echo "Error: --tool requires a value (claude|codex|gemini)." >&2
+      -agent|--agent|--tool)
+        if [[ -z "${2:-}" || "${2:-}" == -* ]]; then
+          echo "Error: -agent/--agent requires a value (claude|codex|gemini)." >&2
           exit 1
         fi
         TOOL="$2"
+        TOOL_EXPLICIT="true"
         shift 2
         ;;
       --max-iterations)
@@ -405,7 +407,7 @@ run_agent() {
       claude --model "${CLAUDE_MODEL:-opus}" --dangerously-skip-permissions --print < "$prompt_file"
       ;;
     codex)
-      codex exec --full-auto --model "${CODEX_MODEL:-gpt-5.2}" -c "model_reasoning_effort=\"${CODEX_EFFORT:-xhigh}\"" < "$prompt_file"
+      codex exec --full-auto --model "${CODEX_MODEL:-gpt-5.3-codex}" -c "model_reasoning_effort=\"${CODEX_EFFORT:-extrahigh}\"" < "$prompt_file"
       ;;
     gemini)
       local prompt_size
@@ -426,6 +428,12 @@ run_agent_for() {
   local agent_name="$1"
   local prompt_file="$2"
 
+  if [[ "${TOOL_EXPLICIT:-false}" == "true" ]]; then
+    printf "Runner: %s -> tool=%s (explicit)\n" "$agent_name" "$TOOL" >> "$RUN_LOG"
+    run_agent "$prompt_file"
+    return
+  fi
+
   if [[ -f "$RUNNERS_FILE" ]]; then
     require_jq
 
@@ -440,7 +448,7 @@ run_agent_for() {
     if jq -e --arg a "$agent_name" '.[$a].cmd? and (.[$a].cmd|type=="array") and (.[$a].cmd|length>0)' "$RUNNERS_FILE" >/dev/null 2>&1; then
       runner_label="$agent_name"
     elif ! jq -e '.default.cmd? and (.default.cmd|type=="array") and (.default.cmd|length>0)' "$RUNNERS_FILE" >/dev/null 2>&1; then
-      echo "Warning: no runner config for agent '$agent_name' and no valid default in $RUNNERS_FILE. Falling back to --tool=$TOOL." >&2
+      echo "Warning: no runner config for agent '$agent_name' and no valid default in $RUNNERS_FILE. Falling back to -agent=$TOOL." >&2
       runner_label=""
     fi
 

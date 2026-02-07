@@ -118,7 +118,7 @@ Planning runs through five sequential subphases. Each subphase uses a dedicated 
 ### 3.1 Plan Start - Planning Coordinator
 
 ```bash
-./orchestrator.sh plan start --tool claude
+./orchestrator.sh plan start -agent claude
 ```
 
 The planning coordinator:
@@ -134,7 +134,7 @@ The planning coordinator:
 ### 3.2 Plan Area - Area Agent
 
 ```bash
-./orchestrator.sh plan area --area backend --tool claude
+./orchestrator.sh plan area --area backend -agent claude
 ```
 
 Run this once per area. The area agent:
@@ -144,8 +144,8 @@ Run this once per area. The area agent:
 
 **Repeat for each area**:
 ```bash
-./orchestrator.sh plan area --area frontend --tool claude
-./orchestrator.sh plan area --area infrastructure --tool claude
+./orchestrator.sh plan area --area frontend -agent claude
+./orchestrator.sh plan area --area infrastructure -agent claude
 # ... etc
 ```
 
@@ -154,7 +154,7 @@ Run this once per area. The area agent:
 ### 3.3 Plan Review - Planning Reviewer
 
 ```bash
-./orchestrator.sh plan review --tool claude
+./orchestrator.sh plan review -agent claude
 ```
 
 The reviewer:
@@ -169,7 +169,7 @@ The reviewer:
 ### 3.4 Plan Red-Team - Red-Team Agent
 
 ```bash
-./orchestrator.sh plan redteam --tool claude
+./orchestrator.sh plan redteam -agent claude
 ```
 
 The red-team agent stress-tests the plan:
@@ -184,7 +184,7 @@ It proposes targeted fixes (not rewrites). If no high-risk findings remain, it c
 ### 3.5 Plan PM - PM Agent
 
 ```bash
-./orchestrator.sh plan pm --tool claude
+./orchestrator.sh plan pm -agent claude
 ```
 
 The PM agent:
@@ -220,7 +220,7 @@ To check the gate manually:
 
 ```bash
 ./scripts/doctor.sh          # Always run preflight first
-./orchestrator.sh run --tool claude
+./orchestrator.sh run -agent claude
 ```
 
 The orchestrator loops through all stories in priority order, processing each through its current stage.
@@ -228,7 +228,7 @@ The orchestrator loops through all stories in priority order, processing each th
 ### Single Story Run
 
 ```bash
-./orchestrator.sh run --tool claude --story US-001
+./orchestrator.sh run -agent claude --story US-001
 ```
 
 Runs only the specified story through its current stage, then exits.
@@ -271,13 +271,13 @@ Stories with `autonomy: "gated_deploy"` (default for medium/high risk) won't dep
 
 ```bash
 # Approve a specific story
-./orchestrator.sh run --tool claude --approve-deploy US-003
+./orchestrator.sh run -agent claude --approve-deploy US-003
 
 # Approve all stories
-./orchestrator.sh run --tool claude --approve-deploy all
+./orchestrator.sh run -agent claude --approve-deploy all
 
 # Approve multiple stories
-./orchestrator.sh run --tool claude --approve-deploy US-003 --approve-deploy US-005
+./orchestrator.sh run -agent claude --approve-deploy US-003 --approve-deploy US-005
 ```
 
 ### Limiting Iterations
@@ -285,7 +285,7 @@ Stories with `autonomy: "gated_deploy"` (default for medium/high risk) won't dep
 By default, the orchestrator loops until all stories are complete or it hits a blocking condition. Limit iterations for controlled runs:
 
 ```bash
-./orchestrator.sh run --tool claude --max-iterations 10
+./orchestrator.sh run -agent claude --max-iterations 10
 ```
 
 ---
@@ -381,7 +381,7 @@ Each story also has a markdown tracker at `prd/US-XXX.md`. Agents update this wi
 
 ### runners.json
 
-`agents/runners.json` maps agent names to CLI commands. Every agent checks this file before falling back to the `--tool` flag.
+`agents/runners.json` maps agent names to CLI commands. Every agent checks this file before falling back to the `-agent` flag.
 
 **Default config** (all agents use Claude):
 ```json
@@ -399,7 +399,7 @@ Each story also has a markdown tracker at `prd/US-XXX.md`. Agents update this wi
     "cmd": ["claude", "--model", "opus", "--dangerously-skip-permissions", "--print"]
   },
   "builder": {
-    "cmd": ["codex", "exec", "--full-auto", "--model", "gpt-5.2", "-c", "model_reasoning_effort=\"xhigh\""]
+    "cmd": ["codex", "exec", "--full-auto", "--model", "gpt-5.3-codex", "-c", "model_reasoning_effort=\"extrahigh\""]
   },
   "deploy": {
     "cmd": ["gemini", "-p", "{{PROMPT}}", "--model", "gemini-2.0-flash"]
@@ -438,17 +438,17 @@ Most tools receive the prompt via **stdin** (piped from the prompt file). If a t
 
 Point to a different runners file:
 ```bash
-./orchestrator.sh run --tool claude --runners ./my-runners.json
+./orchestrator.sh run -agent claude --runners ./my-runners.json
 ```
 
 ### Environment Variables
 
-Override model names without editing runners.json (only applies in `--tool` fallback mode):
+Override model names without editing runners.json (only applies in `-agent` fallback mode):
 
 ```bash
-CLAUDE_MODEL=sonnet ./orchestrator.sh run --tool claude
-CODEX_MODEL=gpt-5.2 ./orchestrator.sh run --tool codex
-GEMINI_MODEL=gemini-2.5-pro ./orchestrator.sh run --tool gemini
+CLAUDE_MODEL=sonnet ./orchestrator.sh run -agent claude
+CODEX_MODEL=gpt-5.3-codex ./orchestrator.sh run -agent codex
+GEMINI_MODEL=gemini-2.5-pro ./orchestrator.sh run -agent gemini
 ```
 
 ---
@@ -470,7 +470,7 @@ This reads the last active story from `.state/pipeline.json` and continues from 
 Clear all run history, logs, and pipeline state:
 
 ```bash
-./orchestrator.sh run --reset --tool claude
+./orchestrator.sh run --reset -agent claude
 ```
 
 This removes everything in `.state/`, `.log/`, and `.temp/`, then starts fresh.
@@ -604,7 +604,7 @@ Templates are only copied on bootstrap. Editing them won't affect existing files
 ### Adding a New AI Provider
 
 1. Add a case to the `run_agent()` function in `scripts/lib/common.sh`
-2. Add the provider to the `--tool` validation in argument parsing
+2. Add the provider to the `-agent` validation in argument parsing
 3. Update `orchestrator.sh` usage text
 4. Add an example to `agents/runners.example.json`
 

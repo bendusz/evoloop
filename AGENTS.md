@@ -16,7 +16,7 @@ The workflow has two phases:
 - Deploy safety and rollback paths are mandatory.
 
 ## Repository Structure
-- `/orchestrator.sh`: thin CLI dispatcher (`plan` or `run`).
+- `/orchestrator.sh`: pipeline orchestrator (`plan` and `run` combined flows).
 - `/scripts/plan.sh`: planning phase runner.
 - `/scripts/implement.sh`: implementation phase runner.
 - `/scripts/lib/common.sh`: shared orchestration logic and gates.
@@ -50,18 +50,17 @@ Additional planning gate requirements:
    - `./scripts/bootstrap-plan.sh`
 2. Planning preflight:
    - `./scripts/doctor.sh --planning-only`
-3. Run planning subphases:
-   - `./orchestrator.sh plan start --tool claude`
-   - `./orchestrator.sh plan area --area <area> --tool claude`
-   - `./orchestrator.sh plan review --tool claude`
-   - `./orchestrator.sh plan redteam --tool claude`
-   - `./orchestrator.sh plan pm --tool claude`
-4. Full preflight before implementation:
-   - `./scripts/doctor.sh`
-5. Run implementation loop:
-   - `./orchestrator.sh run --tool claude`
+3. Run planning pipeline:
+   - `./orchestrator.sh plan` (runs `start -> area(all) -> review -> redteam`)
+4. Run delivery pipeline:
+   - `./orchestrator.sh run` (runs `pm -> doctor.sh -> implementation loop`)
    - For gated deploy stories, pass explicit approval:
-     - `./orchestrator.sh run --tool claude --approve-deploy US-001`
+     - `./orchestrator.sh run --approve-deploy US-001`
+
+Agent selection:
+- Use `-agent` (or `--agent`) to override the default provider.
+- Example: `./orchestrator.sh plan -agent codex`
+- Default is Codex (`gpt-5.3-codex`, `extrahigh`).
 
 Direct entrypoint equivalents:
 - Planning: `./scripts/plan.sh ...`

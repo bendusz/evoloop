@@ -50,7 +50,7 @@ source "$ROOT_DIR/scripts/lib/common.sh"
 usage_implement() {
   cat <<'USAGE'
 Usage:
-  ./scripts/implement.sh [--max-iterations N] [--tool claude|codex|gemini] [--story US-XXX] [--approve-deploy US-XXX|all] [--resume] [--reset] [--runners <file>]
+  ./scripts/implement.sh [--max-iterations N] [-agent claude|codex|gemini] [--story US-XXX] [--approve-deploy US-XXX|all] [--resume] [--reset] [--runners <file>]
 USAGE
 }
 

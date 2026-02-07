@@ -43,11 +43,11 @@ source "$ROOT_DIR/scripts/lib/common.sh"
 usage_plan() {
   cat <<'USAGE'
 Usage:
-  ./scripts/plan.sh start [--tool claude|codex|gemini] [--runners <file>] [--reset] [--resume]
-  ./scripts/plan.sh area --area <name> [--tool claude|codex|gemini] [--runners <file>] [--reset] [--resume]
-  ./scripts/plan.sh review [--tool claude|codex|gemini] [--runners <file>] [--reset] [--resume]
-  ./scripts/plan.sh redteam [--tool claude|codex|gemini] [--runners <file>] [--reset] [--resume]
-  ./scripts/plan.sh pm [--tool claude|codex|gemini] [--runners <file>] [--reset] [--resume]
+  ./scripts/plan.sh start [-agent claude|codex|gemini] [--runners <file>] [--reset] [--resume]
+  ./scripts/plan.sh area --area <name> [-agent claude|codex|gemini] [--runners <file>] [--reset] [--resume]
+  ./scripts/plan.sh review [-agent claude|codex|gemini] [--runners <file>] [--reset] [--resume]
+  ./scripts/plan.sh redteam [-agent claude|codex|gemini] [--runners <file>] [--reset] [--resume]
+  ./scripts/plan.sh pm [-agent claude|codex|gemini] [--runners <file>] [--reset] [--resume]
 USAGE
 }
 

@@ -1,5 +1,5 @@
 {
-  "_comment": "Multi-provider example config. Model names like gpt-5.2 and gemini-2.0-flash are aspirational examples. Replace with real model names available in your environment.",
+  "_comment": "Multi-provider example config. Model names are examples; replace with real model names available in your environment.",
   "default": {
     "cmd": ["claude", "--model", "opus", "--dangerously-skip-permissions", "--print"]
   },
@@ -9,9 +9,9 @@
       "exec",
       "--full-auto",
       "--model",
-      "gpt-5.2",
+      "gpt-5.3-codex",
       "-c",
-      "model_reasoning_effort=\"xhigh\""
+      "model_reasoning_effort=\"extrahigh\""
     ]
   },
   "red-team": {

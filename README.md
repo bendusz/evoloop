@@ -7,18 +7,24 @@ A self-contained multi-agent workflow for planning, building, reviewing, testing
 Evoloop orchestrates AI agents (Claude, Codex, Gemini) through a two-phase software delivery pipeline:
 
 1. **Planning** - Exhaustive, area-based planning with quality gates, requirement traceability, and red-team review.
-2. **Implementation** - Story-by-story execution loop: build, review/test, deploy, with automatic rollback and retry.
+2. **Implementation** - Story-by-story execution loop: build, review/test, deploy, with deploy retry tracking and rollback handled by the deploy agent contract.
 
 Each agent runs with a minimal, scoped context window. Fresh agents handle each step, so no single agent needs to hold the entire project in memory.
+
+Need the basics only?
+- [Quick User Guide](QuickUserGuide.md)
+- [Full User Guide](UserGuide.md)
 
 ## Prerequisites
 
 - [jq](https://jqlang.github.io/jq/) - JSON processor
 - [ripgrep](https://github.com/BurntSushi/ripgrep) (`rg`) - fast search
-- At least one AI CLI tool:
+- AI CLI tool(s) matching your configured `agents/runners.json` commands:
   - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) (`claude`)
   - [Codex](https://github.com/openai/codex) (`codex`)
   - [Gemini CLI](https://github.com/google-gemini/gemini-cli) (`gemini`)
+
+Default `agents/runners.json` uses Codex (`gpt-5.3-codex`, `extrahigh`) for all agents.
 
 ## Quickstart
 
@@ -32,24 +38,17 @@ Each agent runs with a minimal, scoped context window. Fresh agents handle each 
 # 3. Validate readiness
 ./scripts/doctor.sh --planning-only
 
-# 4. Run planning phases sequentially
-./orchestrator.sh plan start --tool claude
-./orchestrator.sh plan area --area backend --tool claude
-./orchestrator.sh plan review --tool claude
-./orchestrator.sh plan redteam --tool claude
-./orchestrator.sh plan pm --tool claude
+# 4. Run planning pipeline (start -> all areas -> review -> redteam)
+./orchestrator.sh plan
 
-# 5. Validate everything before implementation
-./scripts/doctor.sh
-
-# 6. Run implementation
-./orchestrator.sh run --tool claude
+# 5. Run delivery pipeline (pm -> doctor -> implementation loop)
+./orchestrator.sh run
 ```
 
 ## Architecture
 
 ```
-orchestrator.sh          # Thin CLI dispatcher
+orchestrator.sh          # Pipeline orchestrator (combined plan/run flows)
   ├── scripts/plan.sh    # Planning phase runner
   ├── scripts/implement.sh  # Implementation phase runner
   └── scripts/lib/common.sh # Shared helpers, validation, gates
@@ -132,8 +131,8 @@ Deploy failures are tracked by the orchestrator. After 3 failed attempts, the st
 Stories with `autonomy: "gated_deploy"` require explicit approval:
 
 ```bash
-./orchestrator.sh run --tool claude --approve-deploy US-001
-./orchestrator.sh run --tool claude --approve-deploy all
+./orchestrator.sh run --approve-deploy US-001
+./orchestrator.sh run --approve-deploy all
 ```
 
 ## Preflight Checks
@@ -164,15 +163,12 @@ Agents are routed via `agents/runners.json`. Each entry maps an agent name to a 
 ```json
 {
   "default": {
-    "cmd": ["claude", "--model", "opus", "--dangerously-skip-permissions", "--print"]
-  },
-  "builder": {
-    "cmd": ["codex", "exec", "--full-auto", "--model", "gpt-5.2"]
+    "cmd": ["codex", "exec", "--full-auto", "--model", "gpt-5.3-codex", "-c", "model_reasoning_effort=\"extrahigh\""]
   }
 }
 ```
 
-If no matching runner is configured, the orchestrator falls back to the `--tool` flag. See `agents/runners.example.json` for a multi-provider example.
+If no matching runner is configured, the orchestrator falls back to the `-agent/--agent` flag. Passing `-agent/--agent` explicitly forces that provider for the run. See `agents/runners.example.json` for a multi-provider example.
 
 Use `{{PROMPT}}` in the `cmd` array for tools that take the prompt as an argument instead of stdin.
 
@@ -181,17 +177,13 @@ Use `{{PROMPT}}` in the `cmd` array for tools that take the prompt as an argumen
 ### Planning
 
 ```bash
-./orchestrator.sh plan start   [--tool claude|codex|gemini] [--runners <file>]
-./orchestrator.sh plan area    --area <name> [--tool claude|codex|gemini]
-./orchestrator.sh plan review  [--tool claude|codex|gemini]
-./orchestrator.sh plan redteam [--tool claude|codex|gemini]
-./orchestrator.sh plan pm      [--tool claude|codex|gemini]
+./orchestrator.sh plan [-agent claude|codex|gemini] [--runners <file>] [--areas area1,area2,...]
 ```
 
 ### Implementation
 
 ```bash
-./orchestrator.sh run [--tool claude|codex|gemini]
+./orchestrator.sh run [-agent claude|codex|gemini]
                       [--story US-XXX]
                       [--max-iterations N]
                       [--approve-deploy US-XXX|all]
@@ -200,11 +192,21 @@ Use `{{PROMPT}}` in the `cmd` array for tools that take the prompt as an argumen
                       [--runners <file>]
 ```
 
+### Granular Planning (legacy/manual)
+
+```bash
+./orchestrator.sh plan start   [-agent claude|codex|gemini] [--runners <file>]
+./orchestrator.sh plan area    --area <name> [-agent claude|codex|gemini] [--runners <file>]
+./orchestrator.sh plan review  [-agent claude|codex|gemini] [--runners <file>]
+./orchestrator.sh plan redteam [-agent claude|codex|gemini] [--runners <file>]
+./orchestrator.sh plan pm      [-agent claude|codex|gemini] [--runners <file>]
+```
+
 ### Direct Entrypoints
 
 ```bash
-./scripts/plan.sh start --tool claude
-./scripts/implement.sh --tool claude --story US-001
+./scripts/plan.sh start -agent codex
+./scripts/implement.sh -agent codex --story US-001
 ```
 
 ## Environment Variables
@@ -212,8 +214,8 @@ Use `{{PROMPT}}` in the `cmd` array for tools that take the prompt as an argumen
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `CLAUDE_MODEL` | `opus` | Claude model name |
-| `CODEX_MODEL` | `gpt-5.2` | Codex model name |
-| `CODEX_EFFORT` | `xhigh` | Codex reasoning effort |
+| `CODEX_MODEL` | `gpt-5.3-codex` | Codex model name |
+| `CODEX_EFFORT` | `extrahigh` | Codex reasoning effort |
 | `GEMINI_MODEL` | `gemini-2.0-flash` | Gemini model name |
 
 ## Safety Features
