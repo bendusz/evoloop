@@ -21,7 +21,7 @@ Behavior:
   run runs: pm -> ./scripts/doctor.sh -> implementation loop
 
 Notes:
-- Default agent is codex with CODEX_MODEL=gpt-5.3-codex and CODEX_EFFORT=extrahigh.
+- Default agent is codex with CODEX_MODEL=gpt-5.3-codex and CODEX_EFFORT=xhigh.
 - .init/ is read-only; planning agents should not edit it.
 - Passing -agent/--agent explicitly bypasses runner routing for that invocation.
 - --tool is still accepted as a backward-compatible alias of -agent/--agent.

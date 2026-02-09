@@ -127,6 +127,107 @@ require_jq() {
   fi
 }
 
+semver_gte() {
+  local current="$1"
+  local required="$2"
+  local current_major current_minor current_patch
+  local required_major required_minor required_patch
+
+  if [[ ! "$current" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ || ! "$required" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    return 1
+  fi
+
+  IFS='.' read -r current_major current_minor current_patch <<< "$current"
+  IFS='.' read -r required_major required_minor required_patch <<< "$required"
+
+  if (( current_major != required_major )); then
+    (( current_major > required_major ))
+    return
+  fi
+
+  if (( current_minor != required_minor )); then
+    (( current_minor > required_minor ))
+    return
+  fi
+
+  (( current_patch >= required_patch ))
+}
+
+codex_cli_version() {
+  local version_output
+  if ! version_output=$(codex --version 2>&1); then
+    return 1
+  fi
+  if [[ "$version_output" =~ ([0-9]+\.[0-9]+\.[0-9]+) ]]; then
+    printf "%s\n" "${BASH_REMATCH[1]}"
+    return 0
+  fi
+  return 1
+}
+
+required_codex_cli_version_for_model() {
+  local model="$1"
+  case "$model" in
+    gpt-5.3-codex)
+      printf "0.98.0\n"
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+validate_codex_cli_for_model() {
+  local model="$1"
+  local required_version
+  local installed_version
+
+  if ! required_version=$(required_codex_cli_version_for_model "$model"); then
+    return 0
+  fi
+
+  if ! command -v codex >/dev/null 2>&1; then
+    echo "Error: model '$model' requires codex-cli >= $required_version, but codex is not installed." >&2
+    return 1
+  fi
+
+  if ! installed_version=$(codex_cli_version); then
+    echo "Error: unable to determine codex-cli version from 'codex --version'." >&2
+    return 1
+  fi
+
+  if ! semver_gte "$installed_version" "$required_version"; then
+    echo "Error: model '$model' requires codex-cli >= $required_version. Installed version: $installed_version." >&2
+    echo "  Upgrade codex-cli or choose a different model." >&2
+    return 1
+  fi
+}
+
+extract_model_arg_from_cmd() {
+  local -a cmd=("$@")
+  local idx part next_idx
+
+  for ((idx = 0; idx < ${#cmd[@]}; idx++)); do
+    part="${cmd[$idx]}"
+    case "$part" in
+      --model|-m)
+        next_idx=$((idx + 1))
+        if (( next_idx < ${#cmd[@]} )); then
+          printf "%s\n" "${cmd[$next_idx]}"
+          return 0
+        fi
+        return 1
+        ;;
+      --model=*)
+        printf "%s\n" "${part#--model=}"
+        return 0
+        ;;
+    esac
+  done
+  return 1
+}
+
 ensure_dirs() {
   mkdir -p "$LOG_ROOT" "$TEMP_DIR" "$STATE_DIR" "$SCRIPT_DIR/.plan/areas"
 }
@@ -364,7 +465,7 @@ append_context_pack() {
     printf "\n## %s\n\n" "$header"
     printf "Files:\n"
     for f in "$@"; do
-      printf "- %s\n" "$f"
+      printf -- "- %s\n" "$f"
     done
   } >> "$CONTEXT_PACK"
 }
@@ -385,7 +486,7 @@ build_prompt() {
   printf "\n" >> "$prompt_file"
   printf "Read only these files unless absolutely required:\n" >> "$prompt_file"
   for f in "${files[@]}"; do
-    printf "- %s\n" "$f" >> "$prompt_file"
+    printf -- "- %s\n" "$f" >> "$prompt_file"
   done
   printf "\nContext pack: %s\n" "$CONTEXT_PACK" >> "$prompt_file"
 
@@ -407,7 +508,11 @@ run_agent() {
       claude --model "${CLAUDE_MODEL:-opus}" --dangerously-skip-permissions --print < "$prompt_file"
       ;;
     codex)
-      codex exec --full-auto --model "${CODEX_MODEL:-gpt-5.3-codex}" -c "model_reasoning_effort=\"${CODEX_EFFORT:-extrahigh}\"" < "$prompt_file"
+      local codex_model="${CODEX_MODEL:-gpt-5.3-codex}"
+      if ! validate_codex_cli_for_model "$codex_model"; then
+        exit 1
+      fi
+      codex exec --full-auto --model "$codex_model" -c "model_reasoning_effort=\"${CODEX_EFFORT:-xhigh}\"" < "$prompt_file"
       ;;
     gemini)
       local prompt_size
@@ -455,9 +560,19 @@ run_agent_for() {
     if [[ -n "$runner_label" ]]; then
       local -a cmd=()
       local cmd_part
+      local runner_model
       while IFS= read -r cmd_part; do
         cmd+=("$cmd_part")
       done < <(jq -r --arg a "$runner_label" '.[$a].cmd[]' "$RUNNERS_FILE")
+
+      if [[ "${cmd[0]:-}" == "codex" ]]; then
+        if runner_model=$(extract_model_arg_from_cmd "${cmd[@]}"); then
+          if ! validate_codex_cli_for_model "$runner_model"; then
+            exit 1
+          fi
+        fi
+      fi
+
       printf "Runner: %s -> %s\n" "$agent_name" "${cmd[*]}" >> "$RUN_LOG"
       local uses_prompt_arg="false"
       for part in "${cmd[@]}"; do

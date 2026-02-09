@@ -50,6 +50,8 @@ npm install -g @anthropic-ai/claude-code
 npm install -g @openai/codex
 ```
 
+If you configure `gpt-5.3-codex`, ensure `codex --version` is `0.98.0` or later.
+
 **Gemini CLI**:
 ```bash
 npm install -g @google/gemini-cli
@@ -62,6 +64,7 @@ npm install -g @google/gemini-cli
 ```
 
 This runs structural checks without requiring stories or runner tools.
+When runner checks are enabled, `doctor.sh` also validates Codex CLI version requirements from `agents/runners.json` (for example, `gpt-5.3-codex` requires `codex-cli >= 0.98.0`).
 
 ---
 
@@ -399,7 +402,7 @@ Each story also has a markdown tracker at `prd/US-XXX.md`. Agents update this wi
     "cmd": ["claude", "--model", "opus", "--dangerously-skip-permissions", "--print"]
   },
   "builder": {
-    "cmd": ["codex", "exec", "--full-auto", "--model", "gpt-5.3-codex", "-c", "model_reasoning_effort=\"extrahigh\""]
+    "cmd": ["codex", "exec", "--full-auto", "--model", "gpt-5.3-codex", "-c", "model_reasoning_effort=\"xhigh\""]
   },
   "deploy": {
     "cmd": ["gemini", "-p", "{{PROMPT}}", "--model", "gemini-2.0-flash"]

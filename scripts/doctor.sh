@@ -166,6 +166,32 @@ check_runner_tools() {
   done
 }
 
+check_codex_model_compatibility() {
+  require_jq
+  if [[ ! -f "$RUNNERS_FILE" ]]; then
+    printf "Missing runners file: %s\n" "$RUNNERS_FILE"
+    return 1
+  fi
+
+  local cmd_json
+  local cmd_part
+  local model
+  local -a cmd=()
+  while IFS= read -r cmd_json; do
+    [[ -z "$cmd_json" ]] && continue
+    cmd=()
+    while IFS= read -r cmd_part; do
+      cmd+=("$cmd_part")
+    done < <(jq -r '.[]' <<< "$cmd_json")
+
+    if model=$(extract_model_arg_from_cmd "${cmd[@]}"); then
+      if ! validate_codex_cli_for_model "$model"; then
+        return 1
+      fi
+    fi
+  done < <(jq -c '.[]?.cmd? // empty | select(type=="array" and length>0 and .[0]=="codex")' "$RUNNERS_FILE")
+}
+
 check_story_schema_all() {
   shopt -s nullglob
   local -a stories=("$SCRIPT_DIR"/prd/*.json)
@@ -325,8 +351,10 @@ run_check "No circular or broken story dependencies" check_no_dependency_cycles
 
 if [[ "$CHECK_RUNNER_TOOLS" == "true" ]]; then
   run_check "Runner tools from agents/runners.json are installed" check_runner_tools
+  run_check "Codex CLI version supports configured model requirements" check_codex_model_compatibility
 else
   print_warn "Skipped runner tool checks (--skip-runner-tools)"
+  print_warn "Skipped Codex model compatibility checks (--skip-runner-tools)"
 fi
 
 if [[ "$CHECK_IMPLEMENTATION_GATE" == "true" ]]; then

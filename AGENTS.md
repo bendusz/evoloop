@@ -60,7 +60,8 @@ Additional planning gate requirements:
 Agent selection:
 - Use `-agent` (or `--agent`) to override the default provider.
 - Example: `./orchestrator.sh plan -agent codex`
-- Default is Codex (`gpt-5.3-codex`, `extrahigh`).
+- Default is Codex (`gpt-5.3-codex`, `xhigh`).
+- `gpt-5.3-codex` requires Codex CLI version `0.98.0` or later.
 
 Direct entrypoint equivalents:
 - Planning: `./scripts/plan.sh ...`

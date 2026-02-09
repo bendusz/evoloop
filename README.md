@@ -23,8 +23,9 @@ Need the basics only?
   - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) (`claude`)
   - [Codex](https://github.com/openai/codex) (`codex`)
   - [Gemini CLI](https://github.com/google-gemini/gemini-cli) (`gemini`)
+- If you use `gpt-5.3-codex`, install Codex CLI `0.98.0` or later.
 
-Default `agents/runners.json` uses Codex (`gpt-5.3-codex`, `extrahigh`) for all agents.
+Default `agents/runners.json` uses Codex (`gpt-5.3-codex`, `xhigh`) for all agents.
 
 ## Quickstart
 
@@ -152,6 +153,7 @@ Checks include:
 - JSON validity for runners and story files
 - Core tool availability (`jq`, `rg`)
 - Runner CLI availability from `agents/runners.json`
+- Codex CLI version compatibility for configured model requirements
 - Story schema and deploy-safety contract validation
 - Circular and broken dependency detection
 - Planning exit gate readiness
@@ -163,7 +165,7 @@ Agents are routed via `agents/runners.json`. Each entry maps an agent name to a 
 ```json
 {
   "default": {
-    "cmd": ["codex", "exec", "--full-auto", "--model", "gpt-5.3-codex", "-c", "model_reasoning_effort=\"extrahigh\""]
+    "cmd": ["codex", "exec", "--full-auto", "--model", "gpt-5.3-codex", "-c", "model_reasoning_effort=\"xhigh\""]
   }
 }
 ```
@@ -215,7 +217,7 @@ Use `{{PROMPT}}` in the `cmd` array for tools that take the prompt as an argumen
 |----------|---------|-------------|
 | `CLAUDE_MODEL` | `opus` | Claude model name |
 | `CODEX_MODEL` | `gpt-5.3-codex` | Codex model name |
-| `CODEX_EFFORT` | `extrahigh` | Codex reasoning effort |
+| `CODEX_EFFORT` | `xhigh` | Codex reasoning effort |
 | `GEMINI_MODEL` | `gemini-2.0-flash` | Gemini model name |
 
 ## Safety Features
