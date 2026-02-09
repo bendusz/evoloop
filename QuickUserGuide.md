@@ -35,6 +35,10 @@ Run combined planning pipeline:
 ./orchestrator.sh plan
 ```
 
+This command pauses after `start` for a user checkpoint, then continues with area/review/redteam.
+Planner questions are saved to `.plan/questions.md`, and your answers are saved to `.plan/answers.md`.
+Use `--skip-user-checkpoint` only for intentionally unattended runs.
+
 Optional agent override:
 
 ```bash

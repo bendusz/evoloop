@@ -26,6 +26,7 @@ Need the basics only?
 - If you use `gpt-5.3-codex`, install Codex CLI `0.98.0` or later.
 
 Default `agents/runners.json` uses Codex (`gpt-5.3-codex`, `xhigh`) for all agents.
+The default Codex runner includes `--skip-git-repo-check`, so planning/implementation can run before repository initialization.
 
 ## Quickstart
 
@@ -39,7 +40,7 @@ Default `agents/runners.json` uses Codex (`gpt-5.3-codex`, `xhigh`) for all agen
 # 3. Validate readiness
 ./scripts/doctor.sh --planning-only
 
-# 4. Run planning pipeline (start -> all areas -> review -> redteam)
+# 4. Run planning pipeline (start -> user checkpoint -> all areas -> review -> redteam)
 ./orchestrator.sh plan
 
 # 5. Run delivery pipeline (pm -> doctor -> implementation loop)
@@ -76,7 +77,7 @@ Planning is explicit, sequenced, and gate-driven through five subphases:
 
 | Step | Agent | What It Does |
 |------|-------|-------------|
-| `start` | Planning Coordinator | Reads `.init/`, asks clarifying questions, creates area map and planning registers |
+| `start` | Planning Coordinator | Reads `.init/`, writes 4-5 clarifying questions to `.plan/questions.md`, creates area map and planning registers |
 | `area` | Area Agent | Deepens one area at a time through `draft -> probing -> in_review -> approved -> locked` |
 | `review` | Planning Reviewer | Finds gaps, produces `work-breakdown.md` with `REQ-###` IDs and `traceability.md` |
 | `redteam` | Red-Team Agent | Stress-tests scale, security, rollback realism, critical-path coverage |
@@ -91,6 +92,8 @@ Before PM runs and before implementation, the orchestrator enforces:
 - `work-breakdown.md` and `traceability.md` include `REQ-###` IDs
 - `dependencies.md` includes a critical path section
 - No area is still `draft`, `probing`, or `in_review`
+
+During `./orchestrator.sh plan`, the orchestrator pauses after `start` and collects answers interactively, then writes them to `.plan/answers.md` for downstream planning agents.
 
 ## Implementation Phase
 
@@ -165,7 +168,7 @@ Agents are routed via `agents/runners.json`. Each entry maps an agent name to a 
 ```json
 {
   "default": {
-    "cmd": ["codex", "exec", "--full-auto", "--model", "gpt-5.3-codex", "-c", "model_reasoning_effort=\"xhigh\""]
+    "cmd": ["codex", "exec", "--skip-git-repo-check", "--full-auto", "--model", "gpt-5.3-codex", "-c", "model_reasoning_effort=\"xhigh\""]
   }
 }
 ```
@@ -179,7 +182,7 @@ Use `{{PROMPT}}` in the `cmd` array for tools that take the prompt as an argumen
 ### Planning
 
 ```bash
-./orchestrator.sh plan [-agent claude|codex|gemini] [--runners <file>] [--areas area1,area2,...]
+./orchestrator.sh plan [-agent claude|codex|gemini] [--runners <file>] [--areas area1,area2,...] [--skip-user-checkpoint]
 ```
 
 ### Implementation

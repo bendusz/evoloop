@@ -6,7 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 usage() {
   cat <<'USAGE'
 Usage:
-  ./orchestrator.sh plan [-agent claude|codex|gemini] [--runners <file>] [--areas area1,area2,...] [--reset] [--resume]
+  ./orchestrator.sh plan [-agent claude|codex|gemini] [--runners <file>] [--areas area1,area2,...] [--reset] [--resume] [--skip-user-checkpoint]
   ./orchestrator.sh run [-agent claude|codex|gemini] [--runners <file>] [--story US-XXX] [--max-iterations N] [--approve-deploy US-XXX|all] [--resume] [--reset]
 
 Granular planning (legacy/manual):
@@ -17,11 +17,12 @@ Granular planning (legacy/manual):
   ./orchestrator.sh plan pm [-agent claude|codex|gemini] [--runners <file>] [--reset] [--resume]
 
 Behavior:
-  plan (without subcommand) runs: start -> area (all areas from .plan/areas.md) -> review -> redteam
+  plan (without subcommand) runs: start -> user checkpoint -> area (all areas from .plan/areas.md) -> review -> redteam
   run runs: pm -> ./scripts/doctor.sh -> implementation loop
 
 Notes:
 - Default agent is codex with CODEX_MODEL=gpt-5.3-codex and CODEX_EFFORT=xhigh.
+- Default Codex invocations include --skip-git-repo-check.
 - .init/ is read-only; planning agents should not edit it.
 - Passing -agent/--agent explicitly bypasses runner routing for that invocation.
 - --tool is still accepted as a backward-compatible alias of -agent/--agent.
@@ -74,11 +75,68 @@ extract_area_names() {
   ' "$areas_file"
 }
 
+run_planning_user_checkpoint() {
+  local questions_file="$SCRIPT_DIR/.plan/questions.md"
+  local answers_file="$SCRIPT_DIR/.plan/answers.md"
+  local line question answer
+  local -a questions=()
+
+  if [[ ! -f "$questions_file" ]]; then
+    echo "Error: planning user checkpoint requires $questions_file, but it was not created." >&2
+    echo "  Ensure the planner writes 4 to 5 numbered questions to $questions_file." >&2
+    exit 1
+  fi
+
+  while IFS= read -r line; do
+    line="$(trim "$line")"
+    if [[ "$line" =~ ^[0-9]+\.[[:space:]]+(.+)$ ]]; then
+      question="$(trim "${BASH_REMATCH[1]}")"
+      [[ -n "$question" ]] && questions+=("$question")
+    fi
+  done < "$questions_file"
+
+  if [[ "${#questions[@]}" -lt 4 || "${#questions[@]}" -gt 5 ]]; then
+    echo "Error: $questions_file must contain 4 to 5 numbered questions for the user checkpoint." >&2
+    echo "  Found ${#questions[@]} question(s)." >&2
+    exit 1
+  fi
+
+  if [[ ! -t 0 ]]; then
+    echo "Error: planning user checkpoint requires an interactive terminal." >&2
+    echo "  Re-run interactively, or pass --skip-user-checkpoint to bypass intentionally." >&2
+    exit 1
+  fi
+
+  echo
+  echo "Planning user checkpoint: answer the planner's clarifying questions."
+  echo "Questions source: $questions_file"
+  printf "# Planner Answers\n\n" > "$answers_file"
+
+  local idx=0
+  while [[ "$idx" -lt "${#questions[@]}" ]]; do
+    local question_num=$((idx + 1))
+    echo "Q$question_num: ${questions[$idx]}"
+    while true; do
+      read -r -p "A$question_num: " answer
+      answer="$(trim "$answer")"
+      if [[ -n "$answer" ]]; then
+        break
+      fi
+      echo "Answer cannot be empty."
+    done
+    printf "%d. %s\nA: %s\n\n" "$question_num" "${questions[$idx]}" "$answer" >> "$answers_file"
+    idx=$((idx + 1))
+  done
+
+  echo "Saved answers to $answers_file"
+}
+
 run_plan_pipeline() {
   local -a shared_args=()
   local -a start_only_args=()
   local -a areas=()
   local areas_override=""
+  local require_user_checkpoint="true"
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -110,6 +168,10 @@ run_plan_pipeline() {
         start_only_args+=("$1")
         shift 1
         ;;
+      --skip-user-checkpoint)
+        require_user_checkpoint="false"
+        shift 1
+        ;;
       -h|--help)
         usage
         exit 0
@@ -124,7 +186,7 @@ run_plan_pipeline() {
 
   local -a step_cmd=()
 
-  echo "Running planning pipeline: start -> area(all) -> review -> redteam"
+  echo "Running planning pipeline: start -> user-checkpoint -> area(all) -> review -> redteam"
   step_cmd=("$SCRIPT_DIR/scripts/plan.sh" "start")
   if [[ "${#shared_args[@]}" -gt 0 ]]; then
     step_cmd+=("${shared_args[@]}")
@@ -133,6 +195,10 @@ run_plan_pipeline() {
     step_cmd+=("${start_only_args[@]}")
   fi
   "${step_cmd[@]}"
+
+  if [[ "$require_user_checkpoint" == "true" ]]; then
+    run_planning_user_checkpoint
+  fi
 
   if [[ -n "$areas_override" ]]; then
     local raw_area

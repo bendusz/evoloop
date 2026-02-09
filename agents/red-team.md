@@ -8,6 +8,7 @@ Read:
 - `.plan/dependencies.md`
 - `.plan/risk-register.md`
 - `.plan/runbook.md`
+- `.plan/answers.md` (if present)
 
 Tasks:
 1. Stress-test the plan for hidden risk:

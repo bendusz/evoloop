@@ -3,6 +3,7 @@
     "cmd": [
       "codex",
       "exec",
+      "--skip-git-repo-check",
       "--full-auto",
       "--model",
       "gpt-5.3-codex",

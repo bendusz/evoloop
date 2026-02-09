@@ -7,16 +7,23 @@ Read:
 
 Tasks:
 1. Ask 4 to 5 global clarifying questions that remove the highest project risks first.
-2. Create or update `.plan/areas.md` with one row per area and these columns:
+2. Write those questions to `.plan/questions.md` using this exact format:
+   - `# Clarifying Questions`
+   - `1. <question>`
+   - `2. <question>`
+   - `3. <question>`
+   - `4. <question>`
+   - `5. <question>` (optional)
+3. Create or update `.plan/areas.md` with one row per area and these columns:
    - `area`, `status`, `owner`, `priority`, `dependencies`, `criticality`, `open_questions`.
-3. Initialize each area in `status = draft` and create `.plan/areas/<area>.md` with the required section headers:
+4. Initialize each area in `status = draft` and create `.plan/areas/<area>.md` with the required section headers:
    - scope, requirements, non-functional targets, interfaces, data model, security/privacy, observability, failure/rollback, capacity/cost, acceptance checks, open questions.
-4. Create or update planning registers:
+5. Create or update planning registers:
    - `.plan/decisions.md` (id, date, owner, decision, rationale, impact, status)
    - `.plan/assumptions.md` (id, date, owner, assumption, confidence, validation plan, expiry, status)
    - `.plan/dependencies.md` (area dependencies and initial critical path candidates)
    - `.plan/risk-register.md` (risk, likelihood, impact, mitigation, owner, trigger)
-5. Confirm executable commands and prerequisites in `.plan/runbook.md`:
+6. Confirm executable commands and prerequisites in `.plan/runbook.md`:
    - build, test, deploy, rollback, and post-deploy verification.
 
 Rules:

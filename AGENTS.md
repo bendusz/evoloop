@@ -51,7 +51,8 @@ Additional planning gate requirements:
 2. Planning preflight:
    - `./scripts/doctor.sh --planning-only`
 3. Run planning pipeline:
-   - `./orchestrator.sh plan` (runs `start -> area(all) -> review -> redteam`)
+   - `./orchestrator.sh plan` (runs `start -> user checkpoint -> area(all) -> review -> redteam`)
+   - Use `--skip-user-checkpoint` only for intentionally unattended runs.
 4. Run delivery pipeline:
    - `./orchestrator.sh run` (runs `pm -> doctor.sh -> implementation loop`)
    - For gated deploy stories, pass explicit approval:
@@ -62,6 +63,7 @@ Agent selection:
 - Example: `./orchestrator.sh plan -agent codex`
 - Default is Codex (`gpt-5.3-codex`, `xhigh`).
 - `gpt-5.3-codex` requires Codex CLI version `0.98.0` or later.
+- Default Codex runner uses `--skip-git-repo-check` so a pre-existing git repo is not required.
 
 Direct entrypoint equivalents:
 - Planning: `./scripts/plan.sh ...`

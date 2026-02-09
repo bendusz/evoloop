@@ -118,6 +118,16 @@ Place everything the agents need to understand your project into `.init/`:
 
 Planning runs through five sequential subphases. Each subphase uses a dedicated AI agent with a focused prompt and minimal context window.
 
+Recommended interactive planning run:
+
+```bash
+./orchestrator.sh plan
+```
+
+This combined command runs `start -> user checkpoint -> area(all) -> review -> redteam`.
+After `start`, it pauses for user answers, writes questions to `.plan/questions.md`, and stores your responses in `.plan/answers.md`.
+Use `--skip-user-checkpoint` only for intentionally unattended runs.
+
 ### 3.1 Plan Start - Planning Coordinator
 
 ```bash
@@ -127,6 +137,7 @@ Planning runs through five sequential subphases. Each subphase uses a dedicated 
 The planning coordinator:
 - Reads everything in `.init/`
 - Asks 4-5 high-risk clarifying questions
+- Writes those questions to `.plan/questions.md`
 - Creates the area map in `.plan/areas.md`
 - Initializes area files in `.plan/areas/`
 - Seeds the planning registers (decisions, assumptions, dependencies, risks)
@@ -402,7 +413,7 @@ Each story also has a markdown tracker at `prd/US-XXX.md`. Agents update this wi
     "cmd": ["claude", "--model", "opus", "--dangerously-skip-permissions", "--print"]
   },
   "builder": {
-    "cmd": ["codex", "exec", "--full-auto", "--model", "gpt-5.3-codex", "-c", "model_reasoning_effort=\"xhigh\""]
+    "cmd": ["codex", "exec", "--skip-git-repo-check", "--full-auto", "--model", "gpt-5.3-codex", "-c", "model_reasoning_effort=\"xhigh\""]
   },
   "deploy": {
     "cmd": ["gemini", "-p", "{{PROMPT}}", "--model", "gemini-2.0-flash"]

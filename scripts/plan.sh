@@ -4,18 +4,16 @@ set -euo pipefail
 # --- Trap handlers for graceful cleanup on failure or interruption ---
 _plan_cleanup() {
   local exit_code=$?
-  if [[ "$exit_code" -eq 0 ]]; then
-    return
-  fi
+  if [[ "$exit_code" -ne 0 ]]; then
+    # Log the failure if RUN_LOG exists
+    if [[ -n "${RUN_LOG:-}" && -f "$RUN_LOG" ]]; then
+      printf "\n## Crashed\n\nExit code: %s\nTime: %s\n" "$exit_code" "$(date)" >> "$RUN_LOG" 2>/dev/null || true
+    fi
 
-  # Log the failure if RUN_LOG exists
-  if [[ -n "${RUN_LOG:-}" && -f "$RUN_LOG" ]]; then
-    printf "\n## Crashed\n\nExit code: %s\nTime: %s\n" "$exit_code" "$(date)" >> "$RUN_LOG" 2>/dev/null || true
-  fi
-
-  # Update pipeline state to error/crashed
-  if [[ -n "${PIPELINE_FILE:-}" && -d "${STATE_DIR:-}" ]]; then
-    update_pipeline_state "planning" "crashed" "null" "unknown" "$(basename "${RUN_DIR:-unknown}")" 2>/dev/null || true
+    # Update pipeline state to error/crashed
+    if [[ -n "${PIPELINE_FILE:-}" && -d "${STATE_DIR:-}" ]]; then
+      update_pipeline_state "planning" "crashed" "null" "unknown" "$(basename "${RUN_DIR:-unknown}")" 2>/dev/null || true
+    fi
   fi
 
   # Clean up temp prompt files
@@ -57,9 +55,9 @@ run_plan() {
   init_run
   case "$SUBMODE" in
     start)
-      append_context_pack "Planner" ".init/README.md" ".init/" "$AREAS_REL" "$RUNBOOK_REL" "$DECISIONS_REL" "$ASSUMPTIONS_REL" "$DEPENDENCIES_REL" "$RISK_REGISTER_REL"
+      append_context_pack "Planner" ".init/README.md" ".init/" "$AREAS_REL" "$RUNBOOK_REL" "$DECISIONS_REL" "$ASSUMPTIONS_REL" "$DEPENDENCIES_REL" "$RISK_REGISTER_REL" "$QUESTIONS_REL"
       local prompt_file="$TEMP_DIR/prompt-planner.md"
-      build_prompt "$SCRIPT_DIR/agents/planner.md" "$prompt_file" ".init/README.md" ".init/" "$AREAS_REL" "$RUNBOOK_REL" "$DECISIONS_REL" "$ASSUMPTIONS_REL" "$DEPENDENCIES_REL" "$RISK_REGISTER_REL"
+      build_prompt "$SCRIPT_DIR/agents/planner.md" "$prompt_file" ".init/README.md" ".init/" "$AREAS_REL" "$RUNBOOK_REL" "$DECISIONS_REL" "$ASSUMPTIONS_REL" "$DEPENDENCIES_REL" "$RISK_REGISTER_REL" "$QUESTIONS_REL"
       local rc=0
       run_agent_for "planner" "$prompt_file" || rc=$?
       if [[ "$rc" -ne 0 ]]; then
@@ -80,9 +78,15 @@ run_plan() {
         echo "Error: area file not found: $area_file" >&2
         exit 1
       fi
-      append_context_pack "Area: $AREA" "$AREAS_REL" "$area_file" ".init/README.md" "$DECISIONS_REL" "$ASSUMPTIONS_REL" "$DEPENDENCIES_REL" "$RISK_REGISTER_REL"
+      local -a area_context_files=("$AREAS_REL" "$area_file" ".init/README.md" "$DECISIONS_REL" "$ASSUMPTIONS_REL" "$DEPENDENCIES_REL" "$RISK_REGISTER_REL")
+      local -a area_prompt_files=("$AREAS_REL" "$area_file" ".init/README.md" ".init/" "$DECISIONS_REL" "$ASSUMPTIONS_REL" "$DEPENDENCIES_REL" "$RISK_REGISTER_REL")
+      if [[ -f "$SCRIPT_DIR/$ANSWERS_REL" ]]; then
+        area_context_files+=("$ANSWERS_REL")
+        area_prompt_files+=("$ANSWERS_REL")
+      fi
+      append_context_pack "Area: $AREA" "${area_context_files[@]}"
       local prompt_file="$TEMP_DIR/prompt-area-$AREA.md"
-      build_prompt "$SCRIPT_DIR/agents/area-agent.md" "$prompt_file" "$AREAS_REL" "$area_file" ".init/README.md" ".init/" "$DECISIONS_REL" "$ASSUMPTIONS_REL" "$DEPENDENCIES_REL" "$RISK_REGISTER_REL"
+      build_prompt "$SCRIPT_DIR/agents/area-agent.md" "$prompt_file" "${area_prompt_files[@]}"
       local rc=0
       run_agent_for "area-agent" "$prompt_file" || rc=$?
       if [[ "$rc" -ne 0 ]]; then
@@ -94,9 +98,13 @@ run_plan() {
       update_pipeline_state "planning" "area" "$AREA" "area-agent" "$(basename "$RUN_DIR")"
       ;;
     review)
-      append_context_pack "Planning Review" "$AREAS_REL" ".plan/areas/" "$DECISIONS_REL" "$ASSUMPTIONS_REL" "$DEPENDENCIES_REL" "$RISK_REGISTER_REL" "$RUNBOOK_REL"
+      local -a review_files=("$AREAS_REL" ".plan/areas/" "$DECISIONS_REL" "$ASSUMPTIONS_REL" "$DEPENDENCIES_REL" "$RISK_REGISTER_REL" "$RUNBOOK_REL")
+      if [[ -f "$SCRIPT_DIR/$ANSWERS_REL" ]]; then
+        review_files+=("$ANSWERS_REL")
+      fi
+      append_context_pack "Planning Review" "${review_files[@]}"
       local prompt_file="$TEMP_DIR/prompt-reviewer.md"
-      build_prompt "$SCRIPT_DIR/agents/reviewer.md" "$prompt_file" "$AREAS_REL" ".plan/areas/" "$DECISIONS_REL" "$ASSUMPTIONS_REL" "$DEPENDENCIES_REL" "$RISK_REGISTER_REL" "$RUNBOOK_REL"
+      build_prompt "$SCRIPT_DIR/agents/reviewer.md" "$prompt_file" "${review_files[@]}"
       local rc=0
       run_agent_for "reviewer" "$prompt_file" || rc=$?
       if [[ "$rc" -ne 0 ]]; then
@@ -108,9 +116,13 @@ run_plan() {
       update_pipeline_state "planning" "review" "null" "reviewer" "$(basename "$RUN_DIR")"
       ;;
     redteam)
-      append_context_pack "Planning Red Team" "$AREAS_REL" ".plan/areas/" "$DECISIONS_REL" "$ASSUMPTIONS_REL" "$DEPENDENCIES_REL" "$RISK_REGISTER_REL" "$RUNBOOK_REL"
+      local -a redteam_files=("$AREAS_REL" ".plan/areas/" "$DECISIONS_REL" "$ASSUMPTIONS_REL" "$DEPENDENCIES_REL" "$RISK_REGISTER_REL" "$RUNBOOK_REL")
+      if [[ -f "$SCRIPT_DIR/$ANSWERS_REL" ]]; then
+        redteam_files+=("$ANSWERS_REL")
+      fi
+      append_context_pack "Planning Red Team" "${redteam_files[@]}"
       local prompt_file="$TEMP_DIR/prompt-red-team.md"
-      build_prompt "$SCRIPT_DIR/agents/red-team.md" "$prompt_file" "$AREAS_REL" ".plan/areas/" "$DECISIONS_REL" "$ASSUMPTIONS_REL" "$DEPENDENCIES_REL" "$RISK_REGISTER_REL" "$RUNBOOK_REL"
+      build_prompt "$SCRIPT_DIR/agents/red-team.md" "$prompt_file" "${redteam_files[@]}"
       local rc=0
       run_agent_for "red-team" "$prompt_file" || rc=$?
       if [[ "$rc" -ne 0 ]]; then
@@ -123,9 +135,13 @@ run_plan() {
       ;;
     pm)
       validate_planning_exit_gate
-      append_context_pack "PM" "$WORK_BREAKDOWN_REL" "$TRACEABILITY_REL" "$DEPENDENCIES_REL" "$RISK_REGISTER_REL" "$RUNBOOK_REL"
+      local -a pm_files=("$WORK_BREAKDOWN_REL" "$TRACEABILITY_REL" "$DEPENDENCIES_REL" "$RISK_REGISTER_REL" "$RUNBOOK_REL")
+      if [[ -f "$SCRIPT_DIR/$ANSWERS_REL" ]]; then
+        pm_files+=("$ANSWERS_REL")
+      fi
+      append_context_pack "PM" "${pm_files[@]}"
       local prompt_file="$TEMP_DIR/prompt-pm.md"
-      build_prompt "$SCRIPT_DIR/agents/pm.md" "$prompt_file" "$WORK_BREAKDOWN_REL" "$TRACEABILITY_REL" "$DEPENDENCIES_REL" "$RISK_REGISTER_REL" "$RUNBOOK_REL"
+      build_prompt "$SCRIPT_DIR/agents/pm.md" "$prompt_file" "${pm_files[@]}"
       local rc=0
       run_agent_for "pm" "$prompt_file" || rc=$?
       if [[ "$rc" -ne 0 ]]; then

@@ -6,18 +6,16 @@ _impl_exit_code=0
 
 _impl_cleanup() {
   _impl_exit_code=$?
-  if [[ "$_impl_exit_code" -eq 0 ]]; then
-    return
-  fi
+  if [[ "$_impl_exit_code" -ne 0 ]]; then
+    # Log the failure if RUN_LOG exists
+    if [[ -n "${RUN_LOG:-}" && -f "$RUN_LOG" ]]; then
+      printf "\n## Crashed\n\nExit code: %s\nTime: %s\n" "$_impl_exit_code" "$(date)" >> "$RUN_LOG" 2>/dev/null || true
+    fi
 
-  # Log the failure if RUN_LOG exists
-  if [[ -n "${RUN_LOG:-}" && -f "$RUN_LOG" ]]; then
-    printf "\n## Crashed\n\nExit code: %s\nTime: %s\n" "$_impl_exit_code" "$(date)" >> "$RUN_LOG" 2>/dev/null || true
-  fi
-
-  # Update pipeline state to error/crashed
-  if [[ -n "${PIPELINE_FILE:-}" && -d "${STATE_DIR:-}" ]]; then
-    update_pipeline_state "implementation" "crashed" "${_impl_story_id:-unknown}" "${_impl_agent:-unknown}" "$(basename "${RUN_DIR:-unknown}")" 2>/dev/null || true
+    # Update pipeline state to error/crashed
+    if [[ -n "${PIPELINE_FILE:-}" && -d "${STATE_DIR:-}" ]]; then
+      update_pipeline_state "implementation" "crashed" "${_impl_story_id:-unknown}" "${_impl_agent:-unknown}" "$(basename "${RUN_DIR:-unknown}")" 2>/dev/null || true
+    fi
   fi
 
   # Clean up temp prompt files

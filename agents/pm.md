@@ -6,6 +6,7 @@ Read:
 - `.plan/dependencies.md`
 - `.plan/risk-register.md`
 - `.plan/runbook.md`
+- `.plan/answers.md` (if present)
 
 Story ID rules:
 - Use format `US-001`, `US-002`, etc. with zero-padded 3-digit sequential numbers.

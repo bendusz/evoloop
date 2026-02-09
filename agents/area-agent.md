@@ -7,6 +7,7 @@ Read:
 - `.plan/assumptions.md`
 - `.plan/dependencies.md`
 - `.plan/risk-register.md`
+- `.plan/answers.md` (if present)
 - `.init/README.md` and any relevant `.init` files
 
 Tasks:

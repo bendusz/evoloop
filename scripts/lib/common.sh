@@ -13,6 +13,8 @@ PIPELINE_FILE="$STATE_DIR/pipeline.json"
 LOCK_FILE="$STATE_DIR/.pipeline.lock"
 RUNNERS_REL="agents/runners.json"
 RUNBOOK_REL=".plan/runbook.md"
+QUESTIONS_REL=".plan/questions.md"
+ANSWERS_REL=".plan/answers.md"
 RUN_LOG_TEMPLATE="$SCRIPT_DIR/.plan/run-log.template.md"
 AREAS_REL=".plan/areas.md"
 WORK_BREAKDOWN_REL=".plan/work-breakdown.md"
@@ -512,7 +514,7 @@ run_agent() {
       if ! validate_codex_cli_for_model "$codex_model"; then
         exit 1
       fi
-      codex exec --full-auto --model "$codex_model" -c "model_reasoning_effort=\"${CODEX_EFFORT:-xhigh}\"" < "$prompt_file"
+      codex exec --skip-git-repo-check --full-auto --model "$codex_model" -c "model_reasoning_effort=\"${CODEX_EFFORT:-xhigh}\"" < "$prompt_file"
       ;;
     gemini)
       local prompt_size
@@ -566,6 +568,18 @@ run_agent_for() {
       done < <(jq -r --arg a "$runner_label" '.[$a].cmd[]' "$RUNNERS_FILE")
 
       if [[ "${cmd[0]:-}" == "codex" ]]; then
+        local has_skip_git_check="false"
+        local arg
+        for arg in "${cmd[@]}"; do
+          if [[ "$arg" == "--skip-git-repo-check" ]]; then
+            has_skip_git_check="true"
+            break
+          fi
+        done
+        if [[ "$has_skip_git_check" == "false" && ( "${cmd[1]:-}" == "exec" || "${cmd[1]:-}" == "e" ) ]]; then
+          cmd=("${cmd[@]:0:2}" "--skip-git-repo-check" "${cmd[@]:2}")
+        fi
+
         if runner_model=$(extract_model_arg_from_cmd "${cmd[@]}"); then
           if ! validate_codex_cli_for_model "$runner_model"; then
             exit 1
